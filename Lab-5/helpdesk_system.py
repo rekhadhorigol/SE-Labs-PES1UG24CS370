@@ -1,4 +1,3 @@
-
 """Simple helpdesk ticket management system."""
 
 import json
