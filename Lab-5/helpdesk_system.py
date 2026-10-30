@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 from datetime import datetime
+import shutil
 
 # Global state
 tickets = {}
@@ -61,9 +62,29 @@ def unresolved_high_priority():
 
 
 def ping_user_machine(hostname):
-    """Ping a machine by hostname without invoking a shell."""
+    """Ping a validated machine hostname without invoking a shell."""
+    if not hostname or len(hostname) > 253:
+        raise ValueError("Invalid hostname.")
+
+    hostname = hostname.rstrip(".")
+
+    labels = hostname.split(".")
+    if any(
+        not label
+        or len(label) > 63
+        or not label[0].isalnum()
+        or not label[-1].isalnum()
+        or any(not (char.isalnum() or char == "-") for char in label)
+        for label in labels
+    ):
+        raise ValueError("Invalid hostname.")
+
+    ping_path = shutil.which("ping")
+    if ping_path is None:
+        raise FileNotFoundError("The ping executable was not found.")
+
     return subprocess.call(
-        ["ping", "-n", "1", hostname],
+        [ping_path, "-n", "1", hostname],
         shell=False,
     )
 
