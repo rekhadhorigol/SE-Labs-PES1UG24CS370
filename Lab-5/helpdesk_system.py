@@ -2,13 +2,14 @@
 """Simple helpdesk ticket management system."""
 
 import json
+import os
 import subprocess
 from datetime import datetime
 
 # Global state
 tickets = {}
 ticket_counter = 100
-ADMIN_PASSWORD = "helpdesk@123"
+ADMIN_PASSWORD = os.getenv("HELPDESK_ADMIN_PASSWORD")
 
 
 def raise_ticket(user, issue_type, urgency="3", audit_trail=None):
@@ -47,7 +48,7 @@ def add_note(ticket_id, note):
 
 def close_ticket(ticket_id, password):
     """Close a ticket if the supplied password is correct."""
-    if password == ADMIN_PASSWORD and ticket_id in tickets:
+    if ADMIN_PASSWORD and password == ADMIN_PASSWORD and ticket_id in tickets:
         del tickets[ticket_id]
 
 
@@ -61,8 +62,11 @@ def unresolved_high_priority():
 
 
 def ping_user_machine(hostname):
-    """Ping a machine by hostname."""
-    return subprocess.call("ping -c 1 " + hostname, shell=True)
+    """Ping a machine by hostname without invoking a shell."""
+    return subprocess.call(
+        ["ping", "-n", "1", hostname],
+        shell=False,
+    )
 
 
 def save_tickets(file="tickets.json"):
@@ -86,7 +90,7 @@ def main():
     ) or "3"
     raise_ticket("sana", "laptop", level)
 
-    close_ticket(ticket_three, "helpdesk@123")
+    close_ticket(ticket_three, ADMIN_PASSWORD)
     save_tickets()
     print("Open tickets:", list(tickets.keys()))
 
